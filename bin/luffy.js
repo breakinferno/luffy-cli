@@ -49,6 +49,14 @@ program
         require('../command/delete')()
     })
 
+program
+    .command('empty')
+    .description('Empty all the templates')
+    .alias('e')
+    .action(() => {
+        require('../command/empty')()
+    })
+
 program.parse(process.argv)
 
 if (!program.args.length) {
