@@ -1,5 +1,6 @@
 'use strict'
 const config = require('../templates.json')
+const base = require('./base')
 const chalk = require('chalk')
 const inquirer = require('inquirer')
 const path = require('path')
@@ -85,19 +86,23 @@ module.exports = (options) => {
             } else {
                 const templatePath = path.join(__dirname, '../templates', answers['tplName']);
                 // 支持相对路径 多参数join
-                return new Promise((resolve, reject) => {
-                    fs.copy(answers.address, templatePath, filter(answers.filter), err => {
-                        console.log('copy over!');
-                        if (err) {
-                            reject(err)
-                        }
-                        config.tpl[answers.tplName]['url'] = templatePath;
-                        resolve({
-                            config,
-                            answers
-                        })
-                    })
+                base.copyFiles(answers.address, templatePath, filter(answers.filter), (resolve, reject) => {
+                    config.tpl[answers.tplName].url = templatePath;
+                    resolve({config, answers});
                 })
+                // return new Promise((resolve, reject) => {
+                //     fs.copy(answers.address, templatePath, filter(answers.filter), err => {
+                //         console.log('copy over!');
+                //         if (err) {
+                //             reject(err)
+                //         }
+                //         config.tpl[answers.tplName]['url'] = templatePath;
+                //         resolve({
+                //             config,
+                //             answers
+                //         })
+                //     })
+                // })
             }
         }).then(({
             answers,
