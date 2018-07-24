@@ -18,15 +18,16 @@ exports.copyFiles = (from, to, filter, callback) => {
 // 判断是否存在文件夹
 exports.isExistFolder = (filePath, fileName) => {
     const dir = path.join(filePath, fileName);
-    return new Promise((resolve, reject) => {
-        fs.ensureDir(dir, err => {
-            if (err) {
-                console.log(chalk.red(err));
-                return reject(err)
-            }
-            resolve();
-        })
-    })
+    // return new Promise((resolve, reject) => {
+    //     fs.ensureDir(dir, err => {
+    //         if (err) {
+    //             console.log(chalk.red(err));
+    //             return reject(err)
+    //         }
+    //         resolve();
+    //     })
+    // })
+    return fs.pathExists(dir);
 }
 // 删除文件夹
 exports.deleteFolder = (url) => {
@@ -36,7 +37,8 @@ exports.deleteFolder = (url) => {
                 console.log(chalk.red('Delete Folder Error:' + err));
                 return reject(err)
             }
-            resolve();
+            console.log(chalk.green('\nRemove successful\n'));
+            resolve(true);
         })
     })
 }

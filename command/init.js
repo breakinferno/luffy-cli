@@ -4,8 +4,7 @@ const config = require('../templates.json')
 const inquirer = require('inquirer')
 const path = require('path')
 const base = require('./base')
-const util = require('util');
-const exec = util.promisify(require('child_process').exec);
+const exec = require('child-process-promise').exec;
 
 const questions = [{
     type: 'checkbox',
@@ -40,20 +39,36 @@ const questions = [{
     }
 }];
 
-async function cmdExec(cmd) {
-    console.log(chalk.green('Begin to exec the script: ' + cmd))
-    const {
-        stdout,
-        stderr
-    } = await exec(cmd);
-    if (stderr) {
-        throw new Error(stderr);
-    }
-    return stdout;
+function cmdExec(cmd) {
+    console.log(chalk.green('Begin to exec the script: ' + cmd + '\n'))
+    return exec(cmd)
+        .then((result) => {
+            const {
+                stderr,
+                stdout
+            } = result;
+            if (stderr) {
+                console.log(chalk.yellow('Stderr : ' + stderr));
+                return stderr
+            }
+            console.log(chalk.green('Command ' + cmd + ' execs successful\n'));
+            return stdout;
+        }).catch((err) => {
+            console.log(chalk.red('Cmd exec error: ' + err))
+        })
+}
+
+function cmdsExec(cmds) {
+    const commands = Array.from(cmds);
+    return commands.reduce((promise, cmd) => {
+        return promise.then(() => {
+            return cmdExec(cmd)
+        })
+    }, Promise.resolve())
 }
 
 const handleFileError = (fileName) => {
-    console.log(path.join(process.cwd(), fileName));
+    console.log(chalk.green('Start to remove the file/folder: ' + path.join(process.cwd(), fileName)));
     return base.deleteFolder(path.join(process.cwd(), fileName));
 }
 
@@ -64,7 +79,7 @@ module.exports = () => {
                 tplName,
                 branchName,
             } = answers;
-            console.log(chalk.green('Start generate!'))
+            console.log(chalk.blue('\nStart generate!'))
             let projectName = answers.projectName || tplName;
             const tpl = config.tpl[tplName];
             const {
@@ -76,29 +91,44 @@ module.exports = () => {
                 console.log(chalk.green(`Begin clone the responsity from the ${url}!`));
                 // 本地克隆即可
                 return base.copyFiles(url, distUrl, null, null)
-                .catch(err => {
-                    console.log(chalk.red('Copy file failed!'))
-                    handleFileError(projectName);
-                })
+                    .catch(err => {
+                        console.log(chalk.red('Copy file failed!'))
+                        handleFileError(projectName);
+                    })
             } else {
                 const cmdStr = `git clone ${url} ${projectName} && cd ${projectName} && git checkout ${branchName?branchName:'master'}`
                 // 判断是否存在该文件夹
                 return base.isExistFolder(distUrl, projectName)
-                    .then(() => {
-                        console.log(chalk.blue('Exist the dist folder!\n Remove it!\n'))
-                        return handleFileError(projectName)
+                    .then((exsits) => {
+                        // 存在则强行删除
+                        if (exsits) {
+                            console.log(chalk.green('Exist the dist folder!\nRemove it!\n'))
+                            return handleFileError(projectName)
+                        }
                     })
                     .then(() => {
                         console.log(chalk.green(`Begin clone the responsity from the ${url}!`));
-                        return cmdExec(cmdStr);
+                        // cmdExec(cmdStr).then((res) => {
+                        //     console.log(chalk.blue('Lucky! You init your project successful!\n'));
+                        // }).catch(err => {
+                        //     console.log(chalk.red(err))
+                        // });
+                        // 分步做
+                        const commands = cmdStr.split('&&').map((cmd => {
+                            return cmd.trim();
+                        }));
+                        console.log(chalk.blue(commands.reduce((rt, command, index) => {
+                            return rt + index + ': ' + command + '\n';
+                        }, '\n\nWill exec the following script:\n')));
+                        cmdsExec(commands).then((res) => {
+                            console.log(chalk.blue('Lucky! You init your project successful!\n'));
+                        }).catch(err => {
+                            console.log(chalk.red(err));
+                        })
                     }).catch(err => {
                         console.log(chalk.red(err))
                     })
             }
-        })
-        .then(() => {
-            console.log(chalk.green('Lucky! You init your project successful!\n'));
-            // 其他逻辑
         })
         .catch(err => {
             console.log(chalk.red('Wow, something wrong!\n'));

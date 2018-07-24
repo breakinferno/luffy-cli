@@ -5,7 +5,7 @@ const fs = require('fs')
 const inquirer = require('inquirer')
 const path = require('path')
 const child_process = require('child_process')
-
+const fse = require('fs-extra')
 const options = ['node_modules']; // 添加库的限制条件，可以用于避免node_modules等文件
 
 const typechoose = (type) => {
@@ -137,9 +137,6 @@ const test = (options) => {
         answers,
         config
     }) => {
-        console.log('debugger');
-        console.log(config);
-        console.log(answers);
         // 默认类型为github地址
         config.tpl[answers['tplName']]['type'] = answers.type || 'github';
         fs.writeFile(path.join(__dirname, '../templates.json'), JSON.stringify(config), 'utf-8', err => {
@@ -159,4 +156,11 @@ const test = (options) => {
     })
 }
 
-test(options);
+// test(options);
+
+fse.remove('C:\\Users\\admin\\Desktop\\god')
+.then((res) => {
+    console.log('successful')
+}).catch(err => {
+    console.log(err);
+})
