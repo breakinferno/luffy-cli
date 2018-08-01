@@ -1,0 +1,15 @@
+bin/
+command/
+LICENSE
+node_modules/
+package/
+package.json
+package-lock.json
+templates/
+templates.json
+test/
+test_branch.txt
+todo.md
+
+
+some information!!
